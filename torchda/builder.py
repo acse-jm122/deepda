@@ -17,7 +17,8 @@ class CaseBuilder:
 
     This class provides a convenient way for users to set up
     and execute data assimilation cases using various algorithms,
-    including Ensemble Kalman Filter (EnKF), 3D-Var, and 4D-Var.
+    including Kalman Filter (KF), Ensemble Kalman Filter (EnKF),
+    3D-Var, and 4D-Var.
 
     Parameters
     ----------
@@ -44,21 +45,21 @@ class CaseBuilder:
         Set a parameter for the data assimilation case.
 
     set_algorithm(algorithm: Algorithms) -> CaseBuilder:
-        Set the data assimilation algorithm to use (EnKF, 3D-Var, 4D-Var).
+        Set the data assimilation algorithm to use (KF, EnKF, 3D-Var, 4D-Var).
 
     set_device(device: Device) -> CaseBuilder:
         Set the device (CPU or GPU) for computations.
 
     set_forward_model(forward_model: Callable[[torch.Tensor, _GenericTensor],
         torch.Tensor] | Callable[..., torch.Tensor]) -> CaseBuilder:
-        Set the state transition function 'M' for EnKF.
+        Set the state transition function 'M' for KF, EnKF, 4D-Var.
 
     set_output_sequence_length(output_sequence_length: int)-> "CaseBuilder":
         Set the output sequence length for the forward model.
 
     set_observation_model(observation_model: torch.Tensor |
         Callable[[torch.Tensor], torch.Tensor]) -> CaseBuilder:
-        Set the observation model or matrix 'H' for EnKF.
+        Set the observation model or matrix 'H' for KF, EnKF.
 
     set_background_covariance_matrix
         (background_covariance_matrix: torch.Tensor) -> CaseBuilder:
@@ -427,6 +428,9 @@ class CaseBuilder:
         ----------
         name : str
             The name of the result to retrieve.
+
+            - 'assimilated_all_states'
+                Only available when algorithm is ``Algorithms.KF``.
 
             - 'average_ensemble_all_states'
                 Only available when algorithm is ``Algorithms.EnKF``.

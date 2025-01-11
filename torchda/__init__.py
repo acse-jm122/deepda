@@ -6,7 +6,8 @@ Use Deep Learning in Data Assimilation
 
 TorchDA is a Python package that provides a flexible and user-friendly
 framework for performing data assimilation with neural networks on
-various algorithms, including Ensemble Kalman Filter (EnKF),
+various algorithms, including Kalman Filter (KF),
+Ensemble Kalman Filter (EnKF),
 3D Variational (3D-Var) assimilation, and
 4D Variational (4D-Var) assimilation.
 
@@ -31,6 +32,7 @@ Modules
 
 For more information, please refer to the package documentation.
 """
+
 from contextlib import suppress
 from enum import Enum, auto, unique
 from importlib.metadata import PackageNotFoundError, version
@@ -48,6 +50,7 @@ with suppress(PackageNotFoundError):
 class Algorithms(Enum):
     """Enumeration for various algorithms."""
 
+    KF = auto()  # Kalman Filter
     EnKF = auto()  # Ensemble Kalman Filter
     Var3D = auto()  # 3D Variational assimilation
     Var4D = auto()  # 4D Variational assimilation

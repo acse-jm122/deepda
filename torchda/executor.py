@@ -3,7 +3,7 @@ from copy import deepcopy
 import torch
 
 from . import Algorithms, Device
-from .kalman_filter import apply_EnKF
+from .kalman_filter import apply_KF, apply_EnKF
 from .parameters import Parameters
 from .variational import apply_3DVar, apply_4DVar
 
@@ -13,8 +13,8 @@ class _Executor:
     Data assimilation executor class.
 
     This class provides a high-level integration for configuring and running
-    data assimilation algorithms. It supports Ensemble Kalman Filter (EnKF),
-    3D-Var, and 4D-Var.
+    data assimilation algorithms. It supports Kalman Filter (KF),
+    Ensemble Kalman Filter (EnKF), 3D-Var, and 4D-Var.
 
     Warning
     -------
@@ -49,7 +49,7 @@ class _Executor:
         self.__parameters = parameters
         return self
 
-    def __check_EnKF_parameters(self) -> None:
+    def __check_KF_parameters(self) -> None:
         assert (
             self.__parameters.output_sequence_length > 0
         ), "`output_sequence_length` should be at least 1."
@@ -57,11 +57,14 @@ class _Executor:
             len_observation_time_steps := len(
                 self.__parameters.observation_time_steps
             )
-        ) >= 1, "`observation_time_steps` should be at least 1 in EnKF."
+        ) >= 1, "`observation_time_steps` should be at least 1."
         assert len(self.__parameters.gaps) == len_observation_time_steps, (
             "The length of `gaps` should be equal to "
             "the length of `observation_time_steps`."
         )
+
+    def __check_EnKF_parameters(self) -> None:
+        self.__check_KF_parameters()
         assert (
             self.__parameters.num_ensembles >= 2
         ), "`num_ensembles` should be at least 2 in EnKF."
@@ -104,6 +107,31 @@ class _Executor:
             "the length of `observation_time_steps` minus 1."
         )
 
+    def __call_apply_KF(self) -> tuple[torch.Tensor, torch.Tensor]:
+        """
+        Call the apply_KF function with configured input parameters.
+
+        Returns
+        -------
+        tuple[torch.Tensor, torch.Tensor]
+            The result of the Kalman Filter:
+                assimilated state estimates.
+        """
+        return apply_KF(
+            self.__parameters.observation_time_steps,
+            self.__parameters.gaps,
+            self.__parameters.num_ensembles,
+            self.__parameters.forward_model,
+            self.__parameters.observation_model,
+            self.__parameters.background_covariance_matrix,
+            self.__parameters.observation_covariance_matrix,
+            self.__parameters.background_state,
+            self.__parameters.observations,
+            *self.__parameters.args,
+            start_time=self.__parameters.start_time,
+            comp_postcov=self.__parameters.comp_postcov,
+        )
+
     def __call_apply_EnKF(self) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Call the apply_EnKF function with configured input parameters.
@@ -126,8 +154,8 @@ class _Executor:
             self.__parameters.background_state,
             self.__parameters.observations,
             *self.__parameters.args,
-            comp_postcov=self.__parameters.comp_postcov,
             start_time=self.__parameters.start_time,
+            comp_postcov=self.__parameters.comp_postcov,
         )
 
     def __call_apply_3DVar(self) -> tuple[torch.Tensor, dict[str, list]]:
@@ -266,6 +294,9 @@ class _Executor:
             A dictionary containing the results of the
             data assimilation algorithm.
 
+            - 'assimilated_all_states'
+                Only available when algorithm is ``Algorithms.KF``.
+
             - 'average_ensemble_all_states'
                 Only available when algorithm is ``Algorithms.EnKF``.
 
@@ -285,7 +316,13 @@ class _Executor:
         if self.__parameters is None:
             raise RuntimeError("Set up input parameters before run.")
         algorithm = self.__parameters.algorithm
-        if algorithm is Algorithms.EnKF:
+        if algorithm is Algorithms.KF:
+            self.__check_KF_parameters()
+            results = self.__call_apply_KF()
+            self.__results = {
+                "assimilated_all_states": results[0],  # x_estimates
+            }
+        elif algorithm is Algorithms.EnKF:
             self.__check_EnKF_parameters()
             results = self.__call_apply_EnKF()
             self.__results = {
@@ -309,7 +346,7 @@ class _Executor:
         else:
             raise AttributeError(
                 f"Unspported Algorithm: {algorithm} "
-                "(Only support [EnKF, Var3D, Var4D])"
+                "(Only support [KF, EnKF, Var3D, Var4D])"
             )
         if self.__parameters.comp_postcov:
             self.__results["APosterioriCovariance"] = results[-1]
@@ -324,6 +361,9 @@ class _Executor:
         dict[str, torch.Tensor | dict[str, list]]
             A deep copy of the results dictionary containing
             data assimilation results.
+
+            - 'assimilated_all_states'
+                Only available when algorithm is ``Algorithms.KF``.
 
             - 'average_ensemble_all_states'
                 Only available when algorithm is ``Algorithms.EnKF``.
@@ -352,6 +392,9 @@ class _Executor:
         ----------
         name : str
             The name of the result to retrieve.
+
+            - 'assimilated_all_states'
+                Only available when algorithm is ``Algorithms.KF``.
 
             - 'average_ensemble_all_states'
                 Only available when algorithm is ``Algorithms.EnKF``.

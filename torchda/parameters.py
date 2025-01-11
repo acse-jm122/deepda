@@ -12,12 +12,13 @@ class Parameters:
     Data class to hold parameters for data assimilation.
 
     This class encapsulates the parameters required for data assimilation
-    algorithms, such as Ensemble Kalman Filter (EnKF), 3D-Var, and 4D-Var.
+    algorithms, such as Kalman Filter (KF), Ensemble Kalman Filter (EnKF),
+    3D-Var, and 4D-Var.
 
     Attributes
     ----------
     algorithm : Algorithms
-        The data assimilation algorithm to use (EnKF, 3D-Var, 4D-Var).
+        The data assimilation algorithm to use (KF, EnKF, 3D-Var, 4D-Var).
 
     device : Device, optional
         The device (CPU or GPU) to perform computations on. Default is CPU.
@@ -45,7 +46,7 @@ class Parameters:
         Callable[..., torch.Tensor], optional
         The state transition function 'M' that predicts the state of the
         system given the previous state and the time range.
-        Required for EnKF and 4D-Var.
+        Required for KF, EnKF and 4D-Var.
 
     output_sequence_length : int, optional
         The number of output states along the time for the forward model.
@@ -100,7 +101,7 @@ class Parameters:
     -----
     - Ensure that the provided tensors are properly shaped and compatible with
       the algorithm's requirements.
-    - For EnKF, 'forward_model' should be provided,
+    - For KF and EnKF, 'forward_model' should be provided,
       and 'observation_time_steps' should have at least 1 time point.
     - For 3D-Var and 4D-Var, 'optimizer_cls', 'optimizer_args',
       and 'max_iterations' control the optimization process.

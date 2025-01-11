@@ -33,6 +33,7 @@ def apply_KF(
     y: torch.Tensor,
     *args,
     start_time: float = 0.0,
+    comp_postcov: bool = False,
 ) -> torch.Tensor:
     r"""
     Implementation of the Kalman Filter (constant P assumption).
@@ -157,6 +158,9 @@ def apply_KF(
 
             jacobian = partial(torch.autograd.functional.jacobian, H)
 
+    if comp_postcov:
+        postcovs = [0] * y.shape[0]
+
     # construct initial state
     x = x0.ravel()
 
@@ -176,13 +180,17 @@ def apply_KF(
         H_mat = torch.squeeze(jacobian(x)) if isinstance(H, Callable) else H
         K = (H_mat @ P0 @ H_mat.T) + R
         w = torch.linalg.solve(K, y[iobs] - (H_mat @ x))
+        if comp_postcov:
+            postcovs[iobs] = (
+                torch.eye(x_dim) - P0 @ H_mat.T @ torch.linalg.solve(K, H_mat)
+            ) @ P0
         x = x + (P0 @ H_mat.T @ w)
 
         # store estimates
         x_estimates[istart:istop] = X
         current_time = time_obs_iobs
 
-    return x_estimates
+    return (x_estimates, postcovs) if comp_postcov else x_estimates
 
 
 @torch.no_grad()
