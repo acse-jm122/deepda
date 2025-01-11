@@ -243,7 +243,9 @@ class CaseBuilder:
                 "Covariance matrix should be a symmetric matrix."
             )
         if torch.linalg.matrix_rank(cov_matrix) != size:
-            raise LinAlgError("The input matrix is a singular matrix.")
+            from warnings import warn
+
+            warn("The input matrix is a singular matrix.", UserWarning)
 
     def set_background_covariance_matrix(
         self, background_covariance_matrix: torch.Tensor
