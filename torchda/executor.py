@@ -120,7 +120,6 @@ class _Executor:
         return apply_KF(
             self.__parameters.observation_time_steps,
             self.__parameters.gaps,
-            self.__parameters.num_ensembles,
             self.__parameters.forward_model,
             self.__parameters.observation_model,
             self.__parameters.background_covariance_matrix,
