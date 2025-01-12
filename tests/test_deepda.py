@@ -50,6 +50,7 @@ def executor(torchda):
 
 
 def test_algorithms(algorithms):
+    assert algorithms.KF in algorithms
     assert algorithms.EnKF in algorithms
     assert algorithms.Var3D in algorithms
     assert algorithms.Var4D in algorithms
@@ -114,9 +115,11 @@ def test_case_set_parameter(case):
 
 
 def test_case_set_algorithm(case, algorithms):
+    assert case.set_algorithm(algorithms.KF)
     assert case.set_algorithm(algorithms.EnKF)
     assert case.set_algorithm(algorithms.Var3D)
     assert case.set_algorithm(algorithms.Var4D)
+    assert case.set_parameter("algorithm", algorithms.KF)
     assert case.set_parameter("algorithm", algorithms.EnKF)
     assert case.set_parameter("algorithm", algorithms.Var3D)
     assert case.set_parameter("algorithm", algorithms.Var4D)
